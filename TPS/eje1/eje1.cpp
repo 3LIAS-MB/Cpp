@@ -1,18 +1,8 @@
-// 1. Implementa en lenguaje C++ un programa que permita generar los n
-//  primeros números primos, donde n se enviara como argumento al momento de
-//  ejecutar el programa.
-
-// -> Se pide:
-// • Ejecute el programa con los siguientes valores de n: 100, 1000, 10000,
-// 100000 y 400000. 
-// • Represente en una tabla comparativa los tiempos de ejecución
-// obtenidos para cada valor de n.
-// • Comente acerca de los resultados obtenidos.
-
 #include <iostream>
 #include <vector>
 #include <chrono>
 #include <cstdlib>
+#include <iomanip>
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {
@@ -53,12 +43,18 @@ int main(int argc, char* argv[]) {
     }
 
     auto fin = std::chrono::high_resolution_clock::now();
-    auto duracion = std::chrono::duration_cast<std::chrono::milliseconds>(fin - inicio).count();
+    
+    // Calculamos ambas medidas de tiempo
+    auto duracion_ms = std::chrono::duration_cast<std::chrono::milliseconds>(fin - inicio);
+    std::chrono::duration<double> duracion_sg = fin - inicio;
 
-    std::cout << n << " primos generados en " << duracion << " ms\n";
+    // Configuramos la precisión para segundos
+    std::cout << std::fixed << std::setprecision(6);
+    
+    // Mostramos ambos formatos de tiempo
+    std::cout << n << " primos generados en:\n";
+    std::cout << " - " << duracion_ms.count() << " milisegundos\n";
+    std::cout << " - " << duracion_sg.count() << " segundos\n";
 
     return 0;
 }
-
-// -> cl / EHsc Prueba.cpp
-// -> .\Prueba.exe
