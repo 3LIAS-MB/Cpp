@@ -72,6 +72,11 @@
     "numbers": "cpp",
     "unistd.h": "c",
     "stdio.h": "c",
-    "omp.h": "c"
+    "omp.h": "c",
+    "condition_variable": "cpp",
+    "mutex": "cpp",
+    "semaphore": "cpp",
+    "stop_token": "cpp",
+    "thread": "cpp"
   }
 }
