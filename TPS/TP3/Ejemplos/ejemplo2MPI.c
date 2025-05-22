@@ -6,6 +6,8 @@
 
 int main (int argc, char *argv[]){
 	int  rankid, size, length, origen, destino, tag = 1;
+	// MPI_MAX_PROCESSOR_NAME es la longitud máxima del nombre del procesador.
+	
 	char hostname[MPI_MAX_PROCESSOR_NAME];
 	char mensaje[100];
 	// MPI_Status almacena el estado de la operación de recepción.
@@ -14,8 +16,8 @@ int main (int argc, char *argv[]){
 	MPI_Init(&argc, &argv);
 	
 	// MPI_Comm_rank() obtiene el identificador (rank) del proceso actual.
-	// MPI_Comm_size() obtiene el número total de procesos.	
 	MPI_Comm_rank(MPI_COMM_WORLD, &rankid);
+	// MPI_Comm_size() obtiene el número total de procesos.	
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
 	if (rankid != MASTER){
 		// MPI_Get_processor_name() obtiene el nombre del procesador.
