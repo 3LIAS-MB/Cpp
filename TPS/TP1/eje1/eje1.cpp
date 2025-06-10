@@ -18,10 +18,12 @@ int main(int argc, char* argv[]) {
 
     auto inicio = std::chrono::high_resolution_clock::now();
 
+    // Reserva y almacenamiento de primos
     std::vector<int> primos;
     primos.reserve(n);
     primos.push_back(2);
 
+    // Bucle busqueda de primos
     int numero = 3;
     while (primos.size() < n) {
         bool es_primo = true;

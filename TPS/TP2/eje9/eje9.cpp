@@ -37,6 +37,7 @@ int main(int argc, char* argv[]) {
     // Límite empíricamente ajustado para n >= 400,000
     int limite_superior = (n == 400000) ? 5800000 : static_cast<int>(n * (log(n) + log(log(n))));
 
+    // Region paralela OpenMP
     #pragma omp parallel
     {
         std::vector<int> primos_local;
