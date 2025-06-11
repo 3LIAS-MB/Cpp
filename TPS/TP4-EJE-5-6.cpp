@@ -3,7 +3,8 @@
 #include <chrono>
 #include <cstdlib>
 #include <iomanip>
-#include <mpi.h>
+#include <mpi.h>          // Funciones básicas de MPI (Init, Comm_rank, Comm_size, etc.)
+#include <algorithm>      // Para std::sort (necesario en la versión paralela)
 
 // Función para verificar si un número es primo
 bool es_primo(int numero, const std::vector<int>& primos_anteriores) {
@@ -21,11 +22,11 @@ bool es_primo(int numero, const std::vector<int>& primos_anteriores) {
 }
 
 int main(int argc, char* argv[]) {
+    
     MPI_Init(&argc, &argv);
-
     int rank, size;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank); // ID del proceso actual
+    MPI_Comm_size(MPI_COMM_WORLD, &size); // Número total de procesos
 
     if (argc != 2) {
         if (rank == 0) {
@@ -61,7 +62,8 @@ int main(int argc, char* argv[]) {
         
         // Generamos suficientes primos para que todos los procesos puedan verificar
         int numero = 3;
-        while (primos_globales.size() < std::min(n, 100)) { // Generamos al menos 100 primos para dividir el trabajo
+        // Generamos al menos 100 primos para dividir el trabajo
+        while (primos_globales.size() < std::min(n, 100)) {
             if (es_primo(numero, primos_globales)) {
                 primos_globales.push_back(numero);
             }
