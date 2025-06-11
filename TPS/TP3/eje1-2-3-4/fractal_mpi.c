@@ -166,18 +166,21 @@ int main (int argc, char *argv[])
   char *definput = "input.frac";  /* default input filename */
   char *athinput = definput;
 
-
 #ifdef MPI_PARALLEL
   /* MPI stuff */
-  int r;
+  int r, rank, size;
   MPI_Status *status;
+  double start_time, end_time, total_time; // 👈 agregado
   MPI_Init (&argc, &argv);	                /* starts MPI              */
   MPI_Comm_rank (MPI_COMM_WORLD, &rank);	/* get current process id  */
   MPI_Comm_size (MPI_COMM_WORLD, &size);	/* get number of processes */
 
   status = (MPI_Status*) calloc_1d_array(size, sizeof(MPI_Status));
-#endif /* MPI_PARALLEL */
 
+  if (rank == 0) {
+    start_time = MPI_Wtime(); // 👈 tiempo inicial
+  }
+#endif /* MPI_PARALLEL */
 
   /* parse command line options */
   for (i=1; i<argc; i++) {
@@ -193,25 +196,19 @@ int main (int argc, char *argv[])
   /* process the input file */
   process_input(athinput, argc, argv);
 
-
   /* render the fractal -- do this once for each stripe */
   array = (FractalPointS***) calloc_3d_array(nstripes, Ny, Nx,
 					     sizeof(FractalPointS));
   for (i=0; i<nstripes; i++)
     render(s[i], array[i]);
 
-
-  /* local contrast enhancement: seems like a good idea, but not that
-       effective in practice? */
+  /* local contrast enhancement: seems como buena idea, pero no tan efectiva en práctica */
   /* local_contrast(array); */ 
 
-
-  /* rasterize to 24-bit colors.
-     this combines all the stripes into one image. */
+  /* rasterize to 24-bit colors. */
   color_image = (char*) calloc_1d_array(Ny*Nx*3, sizeof(char));
   rasterize(array, color_image);
   free_3d_array((void***) array);
-
 
 #ifdef MPI_PARALLEL
   if (rank != 0) {
@@ -243,12 +240,27 @@ int main (int argc, char *argv[])
   }
 #endif /* MPI_PARALLEL */
 
-
   /* Finish up */
   free_1d_array((void*) color_image);
   free_1d_array((void*) s);
   free_2d_array((void**) color);
+
 #ifdef MPI_PARALLEL
+  if (rank == 0) {
+    end_time = MPI_Wtime();
+    total_time = end_time - start_time;
+
+    printf("⏱️ Tiempo total con %d procesos: %.6f segundos\n", size, total_time);
+
+    // Reemplaza T1 con el tiempo real que midas con 1 solo proceso
+    double T1 = 10.0; // 👈 Ajusta este valor según tu medición real
+    double Sp = T1 / total_time;
+    double E  = Sp / size;
+
+    printf("🚀 Speedup (S) = %.6f\n", Sp);
+    printf("📈 Eficiencia (E) = %.6f\n", E);
+  }
+
   MPI_Finalize();
 #else
   fclose(fp);
@@ -256,6 +268,7 @@ int main (int argc, char *argv[])
 
   return 0;
 }
+
 /* End main
  * -------------------------------------------------------------------------- */
 
