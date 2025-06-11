@@ -168,7 +168,8 @@ int main (int argc, char *argv[])
 
 #ifdef MPI_PARALLEL
   /* MPI stuff */
-  int r, rank, size;
+  // MODIFICACIÓN: Eliminé la declaración duplicada de rank y size (ya son variables globales)
+  int r;  // Solo se declara r que no estaba como global
   MPI_Status *status;
   double start_time, end_time, total_time; // 👈 agregado
   MPI_Init (&argc, &argv);	                /* starts MPI              */
@@ -177,6 +178,7 @@ int main (int argc, char *argv[])
 
   status = (MPI_Status*) calloc_1d_array(size, sizeof(MPI_Status));
 
+  // MODIFICACIÓN: Moví el inicio del timer después de inicializar MPI completamente
   if (rank == 0) {
     start_time = MPI_Wtime(); // 👈 tiempo inicial
   }
