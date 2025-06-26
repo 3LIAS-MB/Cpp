@@ -76,7 +76,7 @@ void leer_datos_region(const char* archivo, int rank, Region* reg) {
     int actual = -1;
     bool encontrado = false;
 
-    while (fgets(linea, sizeof(linea), f) {
+    while (fgets(linea, sizeof(linea), f)) {
         if (linea[0] == '#' || strlen(linea) < 3) continue;
         actual++;
         if (actual == rank) {

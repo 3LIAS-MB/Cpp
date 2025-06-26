@@ -1,0 +1,6 @@
+
+# mpicc -o sir_epidemias modelo_sir.c -lm
+# mpirun -np 4 ./sir_epidemias datos.txt 2.5 0.8 60 0.15 1234 paralelo resultados.csv
+
+# secuencial
+# ./sir_epidemias datos.txt 2.5 0.8 60 0.15 1234 secuencial resultados.csv
