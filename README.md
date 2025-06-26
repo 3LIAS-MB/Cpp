@@ -1,47 +1,175 @@
-<!-- mpicc fractal_mpi.c -o julia -lm -std=c99 -->
+#include <mpi.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <stddef.h> // Para offsetof
 
-Soy un estudiante universitario y estoy desarrollando un **proyecto de Programación Paralela** para mi curso de "Programación III". El objetivo es simular la propagación del cáncer, un tema que nuestro profesor ha destacado por su conexión con los patrones fractales. Necesito generar un **código C completo, robusto, bien estructurado y documentado** utilizando MPI (MPICH o OpenMPI) para esta simulación.
+#define MAX_VECINOS 10
+#define MAX_LINEA 256
+#define DIAS 30
+#define PROB_MOV 0.1 // Probabilidad reducida para evitar propagación explosiva
 
-El proyecto se basa en la observación de que algunos tipos de cáncer presentan patrones de crecimiento similares a los fractales, lo que permite modelar su expansión. Nuestro profesor sugirió que este tipo de crecimiento ramificado puede ser simulado utilizando el modelo de **Diffusion-Limited Aggregation (DLA)**.
+typedef struct {
+    double S, I, R;
+    int N;
+    int num_vecinos;
+    int vecinos[MAX_VECINOS];
+} Region;
 
-A partir de esta información, por favor, genera un programa en lenguaje C con MPI que cumpla con los siguientes requisitos:
+typedef struct {
+    int dia;
+    double S, I, R;
+} Registro;
 
-🧠 **Requisitos conceptuales:**
-*   El modelo de **Diffusion-Limited Aggregation (DLA)** debe ser la base fractal para simular el crecimiento del tumor. Esto implica que las nuevas células se unen al "tumor" existente siguiendo una lógica de difusión y agregación.
-*   La simulación debe representarse en una **malla 2D** (una cuadrícula discreta) donde cada celda puede estar vacía o contener una célula cancerígena.
-*   Las células nuevas pueden aparecer y crecer si están en contacto (vecindad de Moore, 8 direcciones) con células cancerígenas ya activas, según una **probabilidad de división celular**. Además, las células existentes pueden migrar o morir según sus respectivas probabilidades.
+void leer_datos_region(const char* archivo, int rank, Region* reg) {
+    FILE* f = fopen(archivo, "r");
+    if (!f) {
+        fprintf(stderr, "No se pudo abrir el archivo %s\n", archivo);
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
 
-⚙️ **Requisitos técnicos específicos para la generación de código:**
-*   **Lenguaje de programación:** C (estándar C99 o posterior).
-*   **Paralelización:** MPI (utilizando librerías como MPICH o OpenMPI). El código debe ser diseñado para **ejecutarse eficientemente en múltiples procesos MPI**.
-*   **Dimensiones de la malla de simulación:** 512x512 celdas.
-*   **Semilla inicial del tumor:** Una única célula cancerígena ubicada precisamente en el **centro** de la malla al inicio de la simulación.
-*   **Probabilidad de división celular:** 0.75 (la probabilidad de que una nueva célula aparezca en una celda vacía adyacente a una célula activa).
-*   **Probabilidad de migración:** 0.25 (la probabilidad de que una célula cancerígena se mueva a una celda vacía adyacente).
-*   **Probabilidad de muerte:** 0.05 (la probabilidad de que una célula cancerígena existente muera y la celda quede vacía).
-*   **Número total de iteraciones:** 1000 pasos de tiempo para la simulación.
-*   **Descomposición de la malla:** Implementar una **descomposición de dominio en bloques 2D (grid decomposition)** entre los procesos MPI para distribuir la carga de trabajo y optimizar la comunicación de vecinos.
-*   **Comunicación entre procesos:** Es crucial la **sincronización en cada paso de tiempo** para el intercambio de información de las celdas en los bordes de los subdominios (ghost cells/halo exchange).
-*   El código debe incluir la **inicialización y finalización adecuada de MPI**.
+    char linea[MAX_LINEA];
+    int actual = -1;
+    int encontrado = 0;
 
-📊 **Salida esperada y visualización:**
-*   Generar **imágenes de la malla** en formato **PGM** (Portable Graymap) cada **100 iteraciones** para visualizar el crecimiento del tumor. La imagen debe representar el estado de la malla (por ejemplo, blanco para celdas vacías, negro para celdas con cáncer).
-*   **(Opcional, pero recomendado)** Calcular y reportar **métricas simples** como la cantidad total de células vivas en cada iteración, imprimirlas en consola o en un archivo de texto.
+    while (fgets(linea, sizeof(linea), f)) {
+        if (linea[0] == '#' || strlen(linea) < 3) continue;
+        actual++;
+        if (actual == rank) {
+            char* token = strtok(linea, " ");
+            reg->N = atoi(token);
+            reg->S = atof(strtok(NULL, " "));
+            reg->I = atof(strtok(NULL, " "));
+            reg->R = atof(strtok(NULL, " "));
 
-🎯 **Objetivo final:**
-El objetivo es obtener una **simulación funcional, visualmente representativa y computacionalmente eficiente** del crecimiento tumoral basada en principios fractales y ejecutable de forma paralela en múltiples procesos MPI. El código debe ser **fácil de compilar y ejecutar**, e incluir **comentarios explicativos** para cada sección importante.
-Justificación de los cambios:
-1.
-Contexto para la IA: Se comienza el prompt contextualizando que es un "proyecto universitario" y se pide "código C completo, robusto, bien estructurado y documentado". Esto ayuda a la IA a entender el nivel de calidad y completitud esperado, evitando generar solo fragmentos.
-2.
-Énfasis en MPI: Se subraya que el código debe ser "diseñado para ejecutarse eficientemente en múltiples procesos MPI", reforzando la importancia de la paralelización.
-3.
-Claridad en DLA: Se explica brevemente qué implica DLA en este contexto ("nuevas células se unen al 'tumor' existente siguiendo una lógica de difusión y agregación") para asegurar que la IA implemente el modelo correctamente según la interpretación del problema.
-4.
-Movimiento y Muerte: Se añade un pequeño matiz a la aparición de células: "además, las células existentes pueden migrar o morir según sus respectivas probabilidades". Esto refuerza los requisitos ya dados y los integra mejor en la descripción conceptual.
-5.
-Comunicación Explícita: Aunque ya lo mencionó, especificar "ghost cells/halo exchange" en la comunicación es un detalle técnico que una IA experta en MPI entenderá muy bien y que garantiza una implementación correcta de la descomposición de dominio.
-6.
-Formato de Salida PGM: Se añade una pequeña aclaración sobre cómo se deben representar las celdas en la imagen PGM (ej. blanco/negro) para guiar a la IA en la generación de imágenes claras.
-7.
-Conclusividad: El objetivo final se reformula para sonar más formal y alineado con los objetivos de un trabajo universitario: "simulación funcional, visualmente representativa y computacionalmente eficiente".
+            reg->num_vecinos = 0;
+            while ((token = strtok(NULL, " ")) != NULL && reg->num_vecinos < MAX_VECINOS) {
+                reg->vecinos[reg->num_vecinos++] = atoi(token);
+            }
+            encontrado = 1;
+            break;
+        }
+    }
+
+    fclose(f);
+
+    if (!encontrado) {
+        fprintf(stderr, "No hay suficientes líneas en el archivo para el proceso %d\n", rank);
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+}
+
+MPI_Datatype crear_tipo_registro() {
+    MPI_Datatype tipo_registro;
+    int bloques[2] = {1, 3};
+    MPI_Aint desplazamientos[2];
+    desplazamientos[0] = offsetof(Registro, dia);
+    desplazamientos[1] = offsetof(Registro, S);
+    MPI_Datatype tipos[2] = {MPI_INT, MPI_DOUBLE};
+
+    MPI_Type_create_struct(2, bloques, desplazamientos, tipos, &tipo_registro);
+    MPI_Type_commit(&tipo_registro);
+    return tipo_registro;
+}
+
+int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        printf("Uso: %s archivo_entrada.txt\n", argv[0]);
+        return 1;
+    }
+
+    MPI_Init(&argc, &argv);
+
+    int rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    Region region;
+    leer_datos_region(argv[1], rank, &region);
+
+    srand((unsigned)time(NULL) + rank * 10007);
+
+    MPI_Datatype tipo_registro = crear_tipo_registro();
+    Registro registros[DIAS + 1];
+
+    double beta = 2, gamma = 1;
+
+    double enviar[MAX_VECINOS];
+    double recibir[MAX_VECINOS];
+    MPI_Request req_send[MAX_VECINOS];
+    MPI_Request req_recv[MAX_VECINOS];
+
+    MPI_Barrier(MPI_COMM_WORLD); // Sincronización antes de iniciar
+
+    for (int dia = 0; dia <= DIAS; dia++) {
+        registros[dia].dia = dia;
+        registros[dia].S = region.S;
+        registros[dia].I = region.I;
+        registros[dia].R = region.R;
+
+        // Actualización del modelo SIR
+        double newS = region.S - beta * region.S * region.I / region.N;
+        double newI = region.I + beta * region.S * region.I / region.N - gamma * region.I;
+        double newR = region.R + gamma * region.I;
+
+        // Evitar valores negativos
+        region.S = (newS < 0) ? 0 : newS;
+        region.I = (newI < 0) ? 0 : newI;
+        region.R = (newR < 0) ? 0 : newR;
+
+        // Comunicación con vecinos
+        for (int i = 0; i < region.num_vecinos; i++) {
+            double cantidad_a_enviar = (region.I >= 1.0) ? 1.0 : 0.0;
+            if ((double)rand() / RAND_MAX < PROB_MOV && cantidad_a_enviar > 0) {
+                enviar[i] = cantidad_a_enviar;
+                region.I -= cantidad_a_enviar;
+            } else {
+                enviar[i] = 0.0;
+            }
+            MPI_Irecv(&recibir[i], 1, MPI_DOUBLE, region.vecinos[i], 0, MPI_COMM_WORLD, &req_recv[i]);
+        }
+
+        for (int i = 0; i < region.num_vecinos; i++) {
+            MPI_Isend(&enviar[i], 1, MPI_DOUBLE, region.vecinos[i], 0, MPI_COMM_WORLD, &req_send[i]);
+        }
+
+        MPI_Waitall(region.num_vecinos, req_recv, MPI_STATUSES_IGNORE);
+        for (int i = 0; i < region.num_vecinos; i++) {
+            region.I += recibir[i];
+        }
+
+        MPI_Waitall(region.num_vecinos, req_send, MPI_STATUSES_IGNORE);
+    }
+
+    // Recolección de resultados
+    if (rank == 0) {
+        FILE* f = fopen("resultados_global.csv", "w");
+        if (!f) {
+            fprintf(stderr, "No se pudo abrir el archivo de salida\n");
+            MPI_Abort(MPI_COMM_WORLD, 1);
+        }
+
+        fprintf(f, "Region,Dia,S,I,R\n");
+        for (int d = 0; d <= DIAS; d++) {
+            fprintf(f, "%d,%d,%.2f,%.2f,%.2f\n", rank, registros[d].dia, registros[d].S, registros[d].I, registros[d].R);
+        }
+
+        for (int src = 1; src < size; src++) {
+            Registro otros[DIAS + 1];
+            MPI_Recv(otros, DIAS + 1, tipo_registro, src, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            for (int d = 0; d <= DIAS; d++) {
+                fprintf(f, "%d,%d,%.2f,%.2f,%.2f\n", src, otros[d].dia, otros[d].S, otros[d].I, otros[d].R);
+            }
+        }
+
+        fclose(f);
+        printf("Resultados guardados en resultados_global.csv\n");
+    } else {
+        MPI_Send(registros, DIAS + 1, tipo_registro, 0, 1, MPI_COMM_WORLD);
+    }
+
+    MPI_Type_free(&tipo_registro);
+    MPI_Finalize();
+    return 0;
+}
