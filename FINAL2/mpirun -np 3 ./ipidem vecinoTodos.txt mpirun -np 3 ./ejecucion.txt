@@ -1,2 +1,0 @@
-mpirun -np 3 ./ipidem vecinoTodos.txt
-mpirun -np 3 ./ipidem vecinoCero.txt

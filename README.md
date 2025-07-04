@@ -1,3 +1,7 @@
-100000 99999 1 0   1 2
-80000  80000 0 0   0 2
-60000  60000 0 0   0 1
+sudo apt update && sudo apt install python3-pip -y
+pip3 --version
+
+sudo apt update && sudo apt install python3-venv -y
+python3 -m venv venv
+source venv/bin/activate
+pip install pandas matplotlib seaborn numpy

@@ -1,5 +1,0 @@
-# Formato: N S I R vecinos...
-1000 995 5 0 1 2    # Región 0 (vecinos: 1, 2)
-1000 999 1 0 0 2 3  # Región 1 (vecinos: 0, 2, 3)
-1000 990 10 0 0 1   # Región 2 (vecinos: 0, 1)
-1000 1000 0 0 1     # Región 3 (vecino: 1)
