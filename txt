@@ -1,0 +1,25 @@
+vecinoTodos.txt
+
+# Formato por línea: N S I R [vecinos...]
+# N: Población total
+# S: Susceptibles iniciales
+# I: Infectados iniciales
+# R: Recuperados iniciales
+# Vecinos: índices de otras regiones con las que se comunica
+
+100000 99900 100 0     1 2   # Región 0: conectada con 1 y 2
+80000  79900 100 0     0 2   # Región 1: conectada con 0 y 2
+60000  59900 100 0     0 1   # Región 2: conectada con 0 y 1
+
+vecinoCero.txt
+
+# Formato por línea: N S I R
+# N: Población total
+# S: Susceptibles iniciales
+# I: Infectados iniciales
+# R: Recuperados iniciales
+# Sin vecinos: regiones sin comunicación entre sí
+
+100000 99900 100 0     # Región 0: sin vecinos
+80000  79900 100 0     # Región 1: sin vecinos
+60000  59900 100 0     # Región 2: sin vecinos
