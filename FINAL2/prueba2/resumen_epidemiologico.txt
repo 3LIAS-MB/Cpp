@@ -1,0 +1,18 @@
+RESULTADOS EPIDEMIOLÓGICOS Y DE RENDIMIENTO
+==========================================
+
+Configuración de simulación:
+ - Días simulados: 120
+ - Probabilidad de movilidad: 0.50
+ - Porcentaje de transmisión: 0.02
+ - Beta (tasa infección): 0.80
+ - Gamma (tasa recuperación): 0.10
+
+Métricas por región:
+Region | Pico Infectados | Día Pico | Primer Infección | Tiempo Total (s) | Tiempo Com (s)
+------ | --------------- | -------- | ---------------- | ---------------- | -------------
+     0 |      6537317.50 |       15 |                0 |         0.000301 |     0.000294
+     1 |      5403889.20 |       20 |                0 |         0.000494 |     0.000488
+     2 |      4688370.50 |       19 |                0 |         0.000329 |     0.000322
+
+NOTA: Para calcular speedup, ejecutar por separado con 1 y 3 procesos

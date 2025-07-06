@@ -1,4 +1,3 @@
 mpicc -o sir_simulacion sir_simulacion.c
 
-mpirun -np 3 ./sir_simulacion vecinoTodos.txt
-mpirun -np 3 ./sir_simulacion vecinoCero.txt
+mpirun -np 3 ./sir_simulacion2 completo.txt
