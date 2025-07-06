@@ -20,7 +20,6 @@ typedef struct {
     double peak_infection;  // Máximo de infectados
     int peak_day;           // Día del pico máximo
     int first_infection_day; // Primer día con infectados
-    int last_infection_day;  // Último día con infección
 } Region;
 
 typedef struct {
@@ -39,7 +38,7 @@ void leer_datos_region(const char* archivo, int rank, Region* reg) {
     int actual = -1;
     int encontrado = 0;
 
-    while (fgets(linea, sizeof(linea), f)) {
+    while (fgets(linea, sizeof(linea),   f)) {
         if (linea[0] == '#' || strlen(linea) < 3) continue;
         actual++;
         if (actual == rank) {
@@ -53,7 +52,6 @@ void leer_datos_region(const char* archivo, int rank, Region* reg) {
             reg->peak_infection = reg->I;
             reg->peak_day = 0;
             reg->first_infection_day = (reg->I > 0) ? 0 : -1;
-            reg->last_infection_day = (reg->I > 0) ? 0 : -1;
 
             reg->num_vecinos = 0;
             while ((token = strtok(NULL, " ")) != NULL && reg->num_vecinos < MAX_VECINOS) {
@@ -87,13 +85,9 @@ MPI_Datatype crear_tipo_registro() {
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        printf("Uso: %s archivo_entrada_base\n", argv[0]);
+        printf("Uso: %s archivo_entrada.txt\n", argv[0]);
         return 1;
     }
-
-    // Construir nombre de archivo de entrada
-    char nombre_archivo_entrada[256];
-    snprintf(nombre_archivo_entrada, sizeof(nombre_archivo_entrada), "%s.txt", argv[1]);
 
     MPI_Init(&argc, &argv);
 
@@ -102,7 +96,7 @@ int main(int argc, char* argv[]) {
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
     Region region;
-    leer_datos_region(nombre_archivo_entrada, rank, &region);
+    leer_datos_region(argv[1], rank, &region);
 
     // Semilla única por región
     srand((unsigned)time(NULL) + rank * 10007);
@@ -110,7 +104,7 @@ int main(int argc, char* argv[]) {
     MPI_Datatype tipo_registro = crear_tipo_registro();
     Registro registros[DIAS + 1];
 
-    // Parámetros epidemiológicos actualizados
+    // Parámetros epidemiológicos (actualizados para coincidir con el ejemplo)
     double beta = 0.80, gamma = 0.10;  // R0 = 8
 
     double enviar[MAX_VECINOS] = {0};
@@ -131,11 +125,6 @@ int main(int argc, char* argv[]) {
         registros[dia].S = region.S;
         registros[dia].I = region.I;
         registros[dia].R = region.R;
-
-        // Actualizar seguimiento de infección
-        if (region.I >= 1.0) {
-            region.last_infection_day = dia;
-        }
 
         // Actualizar métricas de pico de infección
         if (region.I > region.peak_infection) {
@@ -195,7 +184,6 @@ int main(int argc, char* argv[]) {
             // Registrar primera infección entrante
             if (recibir[i] > 0 && region.first_infection_day == -1) {
                 region.first_infection_day = dia;
-                region.last_infection_day = dia; // Primer día también es último
             }
         }
         MPI_Waitall(region.num_vecinos, req_send, MPI_STATUSES_IGNORE);
@@ -208,22 +196,11 @@ int main(int argc, char* argv[]) {
     double t_fin = MPI_Wtime();
     double tiempo_total = t_fin - t_inicio;
 
-    // Calcular duración de epidemia
-    int duracion_epidemia = 0;
-    if (region.first_infection_day != -1 && region.last_infection_day != -1) {
-        duracion_epidemia = region.last_infection_day - region.first_infection_day + 1;
-    }
-
-    // Construir nombres de archivos de salida
-    char nombre_csv[256], nombre_resumen[256];
-    snprintf(nombre_csv, sizeof(nombre_csv), "resultados_%s.csv", argv[1]);
-    snprintf(nombre_resumen, sizeof(nombre_resumen), "resumen_%s.txt", argv[1]);
-
     // Recolección de resultados epidemiológicos
     if (rank == 0) {
-        FILE* f = fopen(nombre_csv, "w");
+        FILE* f = fopen("resultados_global.csv", "w");
         if (!f) {
-            fprintf(stderr, "No se pudo abrir el archivo de salida %s\n", nombre_csv);
+            fprintf(stderr, "No se pudo abrir el archivo de salida\n");
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
 
@@ -245,21 +222,21 @@ int main(int argc, char* argv[]) {
     }
 
     // Recolección de métricas de rendimiento y epidemiológicas
-    double metricas[3] = {region.peak_infection, (double)region.peak_day, (double)duracion_epidemia};
+    double metricas[2] = {region.peak_infection, (double)region.peak_day};
     double *todas_metricas = NULL;
     double *tiempos = NULL;
     
     if (rank == 0) {
-        todas_metricas = malloc(size * 3 * sizeof(double));
+        todas_metricas = malloc(size * 2 * sizeof(double));
         tiempos = malloc(size * sizeof(double));
     }
 
-    MPI_Gather(metricas, 3, MPI_DOUBLE, todas_metricas, 3, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Gather(metricas, 2, MPI_DOUBLE, todas_metricas, 2, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Gather(&tiempo_total, 1, MPI_DOUBLE, tiempos, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-    // Generar reporte de resumen
+    // Generar reporte de resumen con nuevo formato
     if (rank == 0) {
-        FILE* resumen = fopen(nombre_resumen, "w");
+        FILE* resumen = fopen("resumen_epidemiologico.txt", "w");
         fprintf(resumen, "RESULTADOS EPIDEMIOLÓGICOS Y DE RENDIMIENTO\n");
         fprintf(resumen, "==========================================\n\n");
         
@@ -271,28 +248,26 @@ int main(int argc, char* argv[]) {
         fprintf(resumen, " - Gamma (tasa recuperación): %.2f\n\n", gamma);
         
         fprintf(resumen, "Métricas por región:\n");
-        fprintf(resumen, "Region | Pico Infectados | Día Pico | Tiempo Total (s) | speedup | duracion de epidemia\n");
-        fprintf(resumen, "------ | --------------- | -------- | ---------------- | ------- | --------------------\n");
+        fprintf(resumen, "Region | Pico Infectados | Día Pico | Tiempo Total (s) | Speedup\n");
+        fprintf(resumen, "------ | --------------- | -------- | ---------------- | -------\n");
         
-        // Calcular tiempo secuencial (suma de todos los tiempos)
-        double tiempo_total_secuencial = 0.0;
-        for (int i = 0; i < size; i++) {
-            tiempo_total_secuencial += tiempos[i];
-        }
+        // Calcular tiempo de referencia (secuencial)
+        double tiempo_referencia = tiempos[0];
         
         for (int i = 0; i < size; i++) {
-            double speedup = (size == 1) ? 1.0 : tiempos[0] / tiempos[i];
-            fprintf(resumen, "%6d | %15.2f | %8d | %16.6f | %7.2f | %21d\n", 
+            // Calcular speedup como T1 / Tn
+            double speedup = tiempo_referencia / tiempos[i];
+            
+            fprintf(resumen, "%6d | %15.2f | %8d | %16.6f | %7.2f\n", 
                    i, 
-                   todas_metricas[i*3],
-                   (int)todas_metricas[i*3+1],
+                   todas_metricas[i*2],
+                   (int)todas_metricas[i*2+1],
                    tiempos[i],
-                   speedup,
-                   (int)todas_metricas[i*3+2]);
+                   speedup);
         }
         
         fclose(resumen);
-        printf("Resultados guardados en:\n- %s\n- %s\n", nombre_csv, nombre_resumen);
+        printf("Resultados guardados en:\n- resultados_global.csv\n- resumen_epidemiologico.txt\n");
         
         free(todas_metricas);
         free(tiempos);

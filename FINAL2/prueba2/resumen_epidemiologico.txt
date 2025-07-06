@@ -11,8 +11,8 @@ Configuración de simulación:
 Métricas por región:
 Region | Pico Infectados | Día Pico | Primer Infección | Tiempo Total (s) | Tiempo Com (s)
 ------ | --------------- | -------- | ---------------- | ---------------- | -------------
-     0 |      6537317.50 |       15 |                0 |         0.000301 |     0.000294
-     1 |      5403889.20 |       20 |                0 |         0.000494 |     0.000488
-     2 |      4688370.50 |       19 |                0 |         0.000329 |     0.000322
+     0 |      6674261.52 |       16 |                0 |         0.000138 |     0.000131
+     1 |      5380422.66 |       20 |                0 |         0.000143 |     0.000136
+     2 |      4632264.72 |       20 |                0 |         0.000139 |     0.000133
 
 NOTA: Para calcular speedup, ejecutar por separado con 1 y 3 procesos
