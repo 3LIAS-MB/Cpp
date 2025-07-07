@@ -190,7 +190,7 @@ int main(int argc, char* argv[]) {
         
         comm_end = MPI_Wtime();
         total_comm_time += (comm_end - comm_start);
-        // FIN COMUNICACIÓN =================================
+        // FIN COMUNICACIÓN
     }
 
     double t_fin = MPI_Wtime();
@@ -217,6 +217,11 @@ int main(int argc, char* argv[]) {
             }
         }
         fclose(f);
+
+        // Imprimir tiempos de ejecución
+        printf("Tiempo total de ejecución: %.6f segundos\n", tiempo_total);
+        printf("Tiempo total en comunicación: %.6f segundos\n", total_comm_time);
+        printf("Porcentaje de tiempo en comunicación: %.2f%%\n", (total_comm_time/tiempo_total)*100);
     } else {
         MPI_Send(registros, DIAS + 1, tipo_registro, 0, 1, MPI_COMM_WORLD);
     }
