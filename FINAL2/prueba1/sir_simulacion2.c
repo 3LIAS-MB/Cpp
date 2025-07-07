@@ -38,7 +38,7 @@ void leer_datos_region(const char* archivo, int rank, Region* reg) {
     int actual = -1;
     int encontrado = 0;
 
-    while (fgets(linea, sizeof(linea),   f)) {
+    while (fgets(linea, sizeof(linea), f)) {
         if (linea[0] == '#' || strlen(linea) < 4) continue;
         actual++;
         if (actual == rank) {
@@ -219,58 +219,6 @@ int main(int argc, char* argv[]) {
         fclose(f);
     } else {
         MPI_Send(registros, DIAS + 1, tipo_registro, 0, 1, MPI_COMM_WORLD);
-    }
-
-    // Recolección de métricas de rendimiento y epidemiológicas
-    double metricas[2] = {region.peak_infection, (double)region.peak_day};
-    double *todas_metricas = NULL;
-    double *tiempos = NULL;
-    
-    if (rank == 0) {
-        todas_metricas = malloc(size * 2 * sizeof(double));
-        tiempos = malloc(size * sizeof(double));
-    }
-
-    MPI_Gather(metricas, 2, MPI_DOUBLE, todas_metricas, 2, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    MPI_Gather(&tiempo_total, 1, MPI_DOUBLE, tiempos, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
-    // Generar reporte de resumen con nuevo formato
-    if (rank == 0) {
-        FILE* resumen = fopen("resumen_epidemiologico.txt", "w");
-        fprintf(resumen, "RESULTADOS EPIDEMIOLÓGICOS Y DE RENDIMIENTO\n");
-        fprintf(resumen, "==========================================\n\n");
-        
-        fprintf(resumen, "Configuración de simulación:\n");
-        fprintf(resumen, " - Días simulados: %d\n", DIAS);
-        fprintf(resumen, " - Probabilidad de movilidad: %.2f\n", PROB_MOV);
-        fprintf(resumen, " - Porcentaje de transmisión: %.2f\n", PORC_TRANSMISION);
-        fprintf(resumen, " - Beta (tasa infección): %.2f\n", beta);
-        fprintf(resumen, " - Gamma (tasa recuperación): %.2f\n\n", gamma);
-        
-        fprintf(resumen, "Métricas por región:\n");
-        fprintf(resumen, "Region | Pico Infectados | Día Pico | Tiempo Total (s) | Speedup\n");
-        fprintf(resumen, "------ | --------------- | -------- | ---------------- | -------\n");
-        
-        // Calcular tiempo de referencia (secuencial)
-        double tiempo_referencia = tiempos[0];
-        
-        for (int i = 0; i < size; i++) {
-            // Calcular speedup como T1 / Tn
-            double speedup = tiempo_referencia / tiempos[i];
-            
-            fprintf(resumen, "%6d | %15.2f | %8d | %16.6f | %7.2f\n", 
-                   i, 
-                   todas_metricas[i*2],
-                   (int)todas_metricas[i*2+1],
-                   tiempos[i],
-                   speedup);
-        }
-        
-        fclose(resumen);
-        printf("Resultados guardados en:\n- resultados_global.csv\n- resumen_epidemiologico.txt\n");
-        
-        free(todas_metricas);
-        free(tiempos);
     }
 
     MPI_Type_free(&tipo_registro);
