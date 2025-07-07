@@ -129,42 +129,56 @@ def grafico_comparativo_infectados(df, guardar=True):
 # 4. Gráfico de porcentajes mejorado
 def grafico_porcentajes(df, guardar=True):
     """Muestra la composición porcentual de la población"""
-    fig, axes = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
+    num_regions = df['Region'].nunique()
+    
+    # Calculate grid dimensions: 2x2 for 4 regions
+    nrows = 2
+    ncols = 2
+    
+    fig, axes = plt.subplots(nrows, ncols, 
+                            figsize=(12, 8), 
+                            sharey=True)
+    
+    # Flatten axes for easier iteration
+    axes_flat = axes.flatten()
     
     for i, region in enumerate(sorted(df['Region'].unique())):
         data = df[df['Region'] == region]
         
         # Gráfico de áreas
-        axes[i].stackplot(data['Dia'], 
-                         data['S_pct'], 
-                         data['I_pct'], 
-                         data['R_pct'],
-                         labels=['Susceptibles', 'Infectados', 'Recuperados'],
-                         colors=['#4C72B0', '#C44E52', '#55A868'],
-                         alpha=0.8)
+        axes_flat[i].stackplot(data['Dia'], 
+                             data['S_pct'], 
+                             data['I_pct'], 
+                             data['R_pct'],
+                             labels=['Susceptibles', 'Infectados', 'Recuperados'],
+                             colors=['#4C72B0', '#C44E52', '#55A868'],
+                             alpha=0.8)
         
         # Líneas de referencia
-        axes[i].axhline(50, color='black', linestyle=':', alpha=0.5, linewidth=1)
-        axes[i].axhline(25, color='black', linestyle=':', alpha=0.3, linewidth=0.5)
-        axes[i].axhline(75, color='black', linestyle=':', alpha=0.3, linewidth=0.5)
+        axes_flat[i].axhline(50, color='black', linestyle=':', alpha=0.5, linewidth=1)
+        axes_flat[i].axhline(25, color='black', linestyle=':', alpha=0.3, linewidth=0.5)
+        axes_flat[i].axhline(75, color='black', linestyle=':', alpha=0.3, linewidth=0.5)
         
-        axes[i].set_title(f'Región {region} - Composición Poblacional', pad=15)
-        axes[i].set_xlabel('Días')
-        axes[i].legend(loc='lower center', bbox_to_anchor=(0.5, -0.25), ncol=3)
-        axes[i].grid(True, alpha=0.3)
+        axes_flat[i].set_title(f'Región {region} - Composición Poblacional', pad=15)
+        axes_flat[i].set_xlabel('Días')
+        axes_flat[i].legend(loc='lower center', bbox_to_anchor=(0.5, -0.25), ncol=3)
+        axes_flat[i].grid(True, alpha=0.3)
         
         # Añadir cuadro con estadísticas finales
         final_stats = (f"Final:\n"
                       f"S: {data['S_pct'].iloc[-1]:.1f}%\n"
                       f"I: {data['I_pct'].iloc[-1]:.1f}%\n"
                       f"R: {data['R_pct'].iloc[-1]:.1f}%")
-        axes[i].text(0.98, 0.98, final_stats,
-                   transform=axes[i].transAxes,
-                   verticalalignment='top', horizontalalignment='right',
-                   bbox=dict(facecolor='white', alpha=0.8))
+        axes_flat[i].text(0.98, 0.98, final_stats,
+                         transform=axes_flat[i].transAxes,
+                         verticalalignment='top', horizontalalignment='right',
+                         bbox=dict(facecolor='white', alpha=0.8))
     
-    axes[0].set_ylabel('Porcentaje de Población')
-    axes[0].yaxis.set_major_formatter(PercentFormatter())
+    # Set y-label only for leftmost plots in each row
+    for ax in axes[:, 0]:
+        ax.set_ylabel('Porcentaje de Población')
+        ax.yaxis.set_major_formatter(PercentFormatter())
+    
     plt.tight_layout()
     if guardar:
         plt.savefig('composicion_poblacional_mejorado.png', bbox_inches='tight')

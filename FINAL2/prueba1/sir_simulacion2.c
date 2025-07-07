@@ -39,7 +39,7 @@ void leer_datos_region(const char* archivo, int rank, Region* reg) {
     int encontrado = 0;
 
     while (fgets(linea, sizeof(linea),   f)) {
-        if (linea[0] == '#' || strlen(linea) < 3) continue;
+        if (linea[0] == '#' || strlen(linea) < 4) continue;
         actual++;
         if (actual == rank) {
             char* token = strtok(linea, " ");
